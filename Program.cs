@@ -1,5 +1,12 @@
 ﻿using System;
 
+/**
+    
+    Dependencies:
+        dotnet add package HtmlAgilityPack.NetCore --version 1.5.0.1
+
+*/
+
 namespace oibregistarhack
 {
     class Program
