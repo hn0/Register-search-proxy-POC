@@ -16,10 +16,10 @@ namespace oibregistarhack
             RegistarSearch search = new RegistarSearch();
             
 
-            // Console.WriteLine("Enter search term");
-            // string inp = Console.ReadLine();
+            Console.WriteLine("Enter search term");
+            string inp = Console.ReadLine();
 
-            string inp = "test";
+            // string inp = "test";
             Console.WriteLine( search.Results( inp ) );
         }
     }

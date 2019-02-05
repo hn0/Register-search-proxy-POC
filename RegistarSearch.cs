@@ -68,7 +68,7 @@ namespace oibregistarhack
 
                     switch( node.Attributes["name"].Value ){
                         case RegistarSearch.SEARCH_FIELD_NAME:
-                            val = term;
+                            val = term.ToLower();
                             break;
                         case RegistarSearch.REQUEST_KEYWORD:
                             val = RegistarSearch.REQUEST_VALUE;
@@ -91,12 +91,55 @@ namespace oibregistarhack
                 // }
 
                 response redirected = this.query(vals, res.Cookie);
+                if( redirected.Status == 200 ){
+                    return parse_results( redirected.Body );
+                }
 
             }
 
             return "-";
         }
 
+
+        private string parse_results(string htmlBody){
+
+            List<string> results = new List<string>();
+            var doc = new HtmlDocument();
+            doc.LoadHtml( htmlBody );
+            // foreach( var node in doc.DocumentNode.SelectNodes("//*[self::input or self::select]" ) ){
+            foreach( var node in doc.DocumentNode.SelectNodes("//table" ) ){
+
+                try{
+                    string _ = node.Attributes["id"].Value;
+                }
+                catch(Exception){
+                    continue;
+                }
+
+                if( node.Attributes["id"].Value.StartsWith( "report" ) ){
+                    foreach( var row in node.SelectNodes( "//tr" ) ){
+
+                        // agility pack is missing any kind of documentation so, try catch is the easiest way to go
+                        try{
+                            if( row.Attributes["class"].Value == "highlight-row" ){
+                                var tds = row.ChildNodes;                                
+                                results.Add( String.Format( "{0}: {1}({2})", tds[0].InnerText, tds[4].InnerText, tds[5].InnerText ) );
+                            }
+                        }
+                        catch(Exception){ 
+                            // Console.WriteLine( ex );
+                        }
+                    }
+                }
+            }
+
+            if( results.Count > 0 ){
+                results.Insert(0, "MBS:  Title(status)");
+                return String.Join( "\n", results.ToArray() );
+            }
+
+            return "No results found";
+        }
 
         private response query(List<item> vals, string cookie) {
             response r = new response();
@@ -120,18 +163,17 @@ namespace oibregistarhack
                 sw.Close();
             }
 
-            Console.WriteLine( "second request!" );
+            // Console.WriteLine( "second request!" );
             // Console.WriteLine( data );
             try{
                 HttpWebResponse res = (HttpWebResponse) req.GetResponse();
                 Console.WriteLine( res.StatusCode );
-                // Stream resp_data = res.GetResponseStream();
-                // using( StreamReader sr = new StreamReader(resp_data) ){
-                //     // r.Body = sr.ReadToEnd();
-                //     Console.WriteLine( sr.ReadToEnd() );
-                // }
-                // r.Headers = res.Headers;
-                // r.Status  = (int) res.StatusCode;
+                Stream resp_data = res.GetResponseStream();
+                using( StreamReader sr = new StreamReader(resp_data) ){
+                    r.Body = sr.ReadToEnd();
+                    // Console.WriteLine( sr.ReadToEnd() );
+                }
+                r.Status  = (int) res.StatusCode;
             }
             catch(Exception ex){
                 Console.WriteLine( "Exception during server hello method" );
